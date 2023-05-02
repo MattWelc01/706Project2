@@ -53,7 +53,7 @@ SoftwareSerial BluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 //ultrasonic global variables
 #define echoPin A4  // attach pin A4 Arduino to pin Echo of HC-SR04
 #define trigPin A5  //attach pin A5 Arduino to pin Trig of HC-SR04
-#define fanPin 1    //attach pin 0 to fan
+#define fanPin 14    //attach pin 0 to fan
 
 
 
@@ -61,23 +61,15 @@ SoftwareSerial BluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 void setup() {
   // put your setup code here, to run once:
 
-
   Serial.begin(9600);
   BluetoothSerial.begin(9600);
-
-
-
 
   pinMode(trigPin, OUTPUT);  // Sets the trigPin as an OUTPUT
   pinMode(echoPin, INPUT);   // Sets the echoPin as an INPUT
   pinMode(INTERNAL_LED, OUTPUT);
   pinMode(fanPin, OUTPUT);
 
-  Pivot.attach(PivotPin, 520, 2550);
-  // Pivot.attach(PivotPin, 520, 2550);
-  
-  // // Set up Timer1 to trigger an interrupt every 100ms
-
+  Pivot.attach(PivotPin, 560, 2610);
 
   enable_motors();
 }
@@ -258,16 +250,18 @@ void loop() {
   // Pivot.write(0);
   //   delay(2000);
   // Serial.println(millis());
-
- Pivot.write(0);
- delay(2000);
+ digitalWrite(fanPin, HIGH);
  Pivot.write(90);
- delay(2000);
- Pivot.write(180);
- delay(2000);
- Pivot.write(0);
+ delay(500);
+ Pivot.write(135);
+ delay(500);
+ Pivot.write(90);
+ delay(500);
+ Pivot.write(45);
+ delay(500);
+ Pivot.write(90);
+ delay(500);
 
-  //digitalWrite(fanPin, LOW);
   //int angle = FindMaxDistanceAngle(360);
   //Serial.println(angle);
   // openLoopTurn(-90);
@@ -277,6 +271,5 @@ void loop() {
   // openLoopTurn(180);
 
 
-  while (1) {
-  }
+
 }
