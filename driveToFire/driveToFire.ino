@@ -16,3 +16,10 @@ void loop() {
    Serial.println(analogRead(IRpin));
    delay(100);
 }
+
+
+void driveToFire(){
+
+
+  
+}
