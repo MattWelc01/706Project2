@@ -253,7 +253,7 @@ void driveToFire() {
 
     if (fireDistance < 10) {
       fireFound = 1;
-      narrowServoSearch();
+      narrowServoSearch(); //SHOULD THIS BE MOED TO FireFight() Function (state D)
       fanOn();
     }
   }
