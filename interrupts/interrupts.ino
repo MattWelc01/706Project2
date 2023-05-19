@@ -54,11 +54,11 @@ ISR(TIMER2_COMPA_vect) {
 #define phototransistor_left_outer A12 
 #define phototransistor_left_inner A13
 
-int fireFlag = 0;
+int FIRE_FLAG = 0;
 int fireThreshold = 4;
 
 void measurePTs(){
-  fireFlag = 0;
+  FIRE_FLAG = 0;
   
   int leftInner = analogRead(phototransistor_left_inner);
   int leftOuter = analogRead(phototransistor_left_outer);
@@ -66,7 +66,7 @@ void measurePTs(){
   int rightOuter = analogRead(phototransistor_right_outer);
 
   if((leftInner > fireThreshold)||(leftOuter > fireThreshold) || (rightInner > fireThreshold)|| (rightOuter > fireThreshold)){
-    fireFlag = 1;
+    FIRE_FLAG = 1;
   }
 }
 
@@ -86,11 +86,14 @@ void measurePTs(){
   int IRLS = 0;
   int IRRS = 0;
   int IRRF = 0;
+  int OBSTACLE_FLAG = 0;
+  
 void measureIRs(){
   IRLF_FLAG = 0;
   IRLS_FLAG = 0;
   IRRS_FLAG = 0;
   IRRF_FLAG = 0;
+  OBSTACLE_FLAG = 0;
   
   IRLF = analogRead(PinIRLF*function);
   IRLS = analogRead(PinIRLS*function);
@@ -99,17 +102,21 @@ void measureIRs(){
   
   if(IRLF < 10){
     IRLF_FLAG = 1;
+    OBSTACLE_FLAG = 1;
   }
   if(IRLS < 10){
     IRLS_FLAG = 1;
+    OBSTACLE_FLAG = 1;
   }
 
   if(IRRS < 10){
     IRRS_FLAG = 1;
+    OBSTACLE_FLAG = 1;
   }
 
   if(IRRF < 10){
     IRRF_FLAG = 1;
+    OBSTACLE_FLAG = 1;
   }
 }
 
