@@ -50,6 +50,12 @@ volatile int distance = 0;   // variable for the distance measurement
 int moving_average[4] = { 0, 0, 0, 0 };
 int phototransistor_values[4] = { 0, 0, 0, 0 };
 
+//infared global variables 
+#define PinIRLF A6
+#define PinIRLS A7
+#define PinIRRS A8 
+#define PinIRRF A9
+
 //gyro globals
 int sensorPin = A3;               //define the pin that gyro is connected
 int sensorValue = 0;              // read out value of sensor
@@ -59,8 +65,9 @@ float gyroZeroVoltage = 0;        // the value of voltage when gyro is zero
 float gyroSensitivity = 0.007;    // gyro sensitivity unit is (mv/degree/second) get from datasheet
 float rotationThreshold = 2;      // because of gyro drifting, defining rotation angular velocity less than this value will not be ignored
 float gyroRate = 0;               // read out value of sensor in voltage
-volatile float currentAngle = 0;  // current angle calculated by angular velocity integral on
+volatile float currentAngle = 180;  // current angle calculated by angular velocity integral on
 byte serialReadGyro = 0;          // for serial print control
+
 
 void setup() {
   delay(2000);
@@ -140,7 +147,8 @@ ISR(TIMER2_COMPA_vect) {
   }
 
   servo_timer++;
-  if (servo_timer >= 25) {
+  if (servo_timer >= 50) {
+    
     sweep();
     servo_timer = 0;
   }
@@ -199,9 +207,9 @@ void sweep() {
 
   if (currentPos != targetPos) {
     if (targetPos > currentPos) {
-      currentPos = min(currentPos + 1, targetPos);  // increment position
+      currentPos = min(currentPos + 2, targetPos);  // increment position
     } else {
-      currentPos = max(currentPos - 1, targetPos);  // decrement position
+      currentPos = max(currentPos - 2, targetPos);  // decrement position
     }
     Pivot.write(currentPos);  // move servo to new position
 
@@ -234,67 +242,25 @@ void readPhototransistors() {
 }
 
 
-volatile double cumulative_error_theta = 0, derivative_error_theta = 0, last_error_theta = 0, power_error_theta = 0;
-unsigned long elapsedTime = 0, lastTime = 0, elapsed_PID_time = 0;
-unsigned long last_update_time = 0;  // timer for PID control
 volatile float error_theta = 0;
-float kp_theta = 1.2, ki_theta = 0.15, kd_theta = 0.4;  //  float kp_theta = 1.75, ki_theta = 0.15, kd_theta = 0.40;
+float kp_theta = 5; //  float kp_theta = 1.75, ki_theta = 0.15, kd_theta = 0.40;
+#define LEFT -1
+#define RIGHT 1
 
-void forward() {
+void straight() {
   //open loop drive forward with closed loop angle 
   error_theta = currentAngle - 180;
 
-  // P CONTROLLER
-  power_error_theta = (kp_theta * error_theta) + (ki_theta * cumulative_error_theta) + (kd_theta * derivative_error_theta);
-
   //Motor kinematics control
-  vectorised_motor_inputs(200, 0, power_error_theta);
-
-  // Updating derivative and integral terms every 20ms
-  elapsed_PID_time = millis() - last_update_time;
-  if (elapsed_PID_time >= 40) {
-
-    derivative_error_theta = (error_theta - last_error_theta) / elapsed_PID_time;
-    power_error_theta += kd_theta * derivative_error_theta;
-    last_error_theta = error_theta;
-
-    cumulative_error_theta += error_theta;
-    cumulative_error_theta = saturate(cumulative_error_theta, -5, 5);
-
-    last_update_time = millis();
-  }
-}
+  vectorised_motor_inputs(175, 0, kp_theta * error_theta);
+} 
 
 void strafe(int direction) {
   //Left: -1, Right:1
   error_theta = currentAngle - 180;
 
-  // P CONTROLLER
-  power_error_theta = (kp_theta * error_theta) + (ki_theta * cumulative_error_theta) + (kd_theta * derivative_error_theta);
-
   //Motor kinematics control
-  vectorised_motor_inputs(0, direction * 200, power_error_theta);
-
-  // Updating derivative and integral terms every 20ms
-  elapsed_PID_time = millis() - last_update_time;
-  if (elapsed_PID_time >= 40) {
-
-    derivative_error_theta = (error_theta - last_error_theta) / elapsed_PID_time;
-    power_error_theta += kd_theta * derivative_error_theta;
-    last_error_theta = error_theta;
-
-    cumulative_error_theta += error_theta;
-    cumulative_error_theta = saturate(cumulative_error_theta, -5, 5);
-
-    last_update_time = millis();
-  }
-}
-
-void reset_variables(void){
-  cumulative_error_theta = 0, derivative_error_theta = 0, last_error_theta = 0, power_error_theta = 0;
-  elapsedTime = 0, lastTime = 0, elapsed_PID_time = 0;
-  last_update_time = 0;
-  error_theta = 0;
+  vectorised_motor_inputs(0, direction * 175, kp_theta * error_theta);
 }
 
 void vectorised_motor_inputs(double x, double y, double theta) {
@@ -321,23 +287,15 @@ void vectorised_motor_inputs(double x, double y, double theta) {
 
 
 void loop() {
- //digitalWrite(fanPin, HIGH);
-//  Pivot.write(0);
-//  delay(1500);
-//  Pivot.write(180);
-//  delay(1500);
-//  Pivot.write(90);
-//  delay(500);
-//  Pivot.write(45);
-//  delay(500);
 
 //state go forward 
-  enable_motors();
+enable_motors();
 
  while(1){
-  measure_distance_ultrasonic();
-  Serial.println(distance);
+  //Pivot.write(90);
+  strafe(RIGHT);
  }
+
 }
 
 //NOTES
