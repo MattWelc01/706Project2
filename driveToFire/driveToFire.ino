@@ -133,26 +133,26 @@ void measureIRs(){
   IRRF_FLAG = 0;
   OBSTACLE_FLAG = 0;
   
-  IRLF = analogRead(PinIRLF*function);
-  IRLS = analogRead(PinIRLS*function);
-  IRRS = analogRead(PinIRRS*function);
-  IRRF = analogRead(PinIRRF*function);
+  IRLF = analogRead(PinIRLF);
+  IRLS = analogRead(PinIRLS);
+  IRRS = analogRead(PinIRRS);
+  IRRF = analogRead(PinIRRF);
   
-  if(IRLF < 10){
+  if(IRLF < 220){
     IRLF_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
-  if(IRLS < 10){
+  if(IRLS < 600){
     IRLS_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
 
-  if(IRRS < 10){
+  if(IRRS < 600){
     IRRS_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
 
-  if(IRRF < 10){
+  if(IRRF < 220){
     IRRF_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
