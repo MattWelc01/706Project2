@@ -119,11 +119,13 @@ void measurePTs(){
   int IRLS_FLAG = 0;
   int IRRS_FLAG = 0;
   int IRRF_FLAG = 0;
+  int SONAR_FLAG = 0;
 
   int IRLF = 0;
   int IRLS = 0;
   int IRRS = 0;
   int IRRF = 0;
+  int SONAR = 0;
   int OBSTACLE_FLAG = 0;
   
 void measureIRs(){
@@ -131,8 +133,10 @@ void measureIRs(){
   IRLS_FLAG = 0;
   IRRS_FLAG = 0;
   IRRF_FLAG = 0;
+  SONAR_FLAG = 0;
   OBSTACLE_FLAG = 0;
-  
+
+  SONAR = analogRead(sonar_pin);
   IRLF = analogRead(PinIRLF);
   IRLS = analogRead(PinIRLS);
   IRRS = analogRead(PinIRRS);
@@ -154,6 +158,11 @@ void measureIRs(){
 
   if(IRRF < 220){
     IRRF_FLAG = 1;
+    OBSTACLE_FLAG = 1;
+  }
+
+   if(SONAR < 220){
+    SONAR_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
 }
