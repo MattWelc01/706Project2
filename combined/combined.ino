@@ -350,7 +350,7 @@ void findMax(int turnPower, int maxSearches) {
   //continue to turn while not found max distance
   while (foundMax == 0) {
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   
     if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1)
     {break;}
 
@@ -388,7 +388,7 @@ void findMax(int turnPower, int maxSearches) {
 
     currentAngle = 180;
     while(abs((findWallAngle/2) - (currentAngle - 180)) > 5 ){
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
       if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1)
       {break;}
        Serial.println(currentAngle);
@@ -397,7 +397,7 @@ void findMax(int turnPower, int maxSearches) {
 
     currentAngle = 180;
     while(abs((findWallAngle/2) - (currentAngle - 180)) > 5 ){
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
       if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1)
       {break;}
        Serial.println(currentAngle);
