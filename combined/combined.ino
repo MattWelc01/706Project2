@@ -448,7 +448,7 @@ void straight() {
 
 void strafe(int direction) {
   //Left: -1, Right:1
-  error_theta = currentAngle - 180;
+  error_theta = -(currentAngle - 180);
 
   //Motor kinematics control
   vectorised_motor_inputs(0, direction * 175, kp_theta * error_theta);
@@ -501,11 +501,9 @@ void obstacleAvoid(void){
     if(!IRLS_FLAG && ((IRLF_FLAG + IRRF_FLAG) == 1)){
       //strafe left
       strafe(-1);
-      Serial.println("yes sonar, strafe left");
     }else if(!IRRS_FLAG && (IRLF_FLAG + IRRF_FLAG == 1)){
       //strafe right
       strafe(1);
-      Serial.println("yes sonar, strafe right");
     }else if((IRLS_FLAG && IRRS_FLAG) && (IRLF_FLAG || IRRF_FLAG)){
       //escape
     }else if(IRLF_FLAG && IRRF_FLAG){
@@ -520,13 +518,11 @@ void obstacleAvoid(void){
   if(!SONAR_FLAG){
     if(!IRLS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
       //STRAFE LEFT
-      Serial.println("no sonar, strafe left");
       strafe(-1);
     }
 
     if(!IRRS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
       //STRAFE RIGHT
-      Serial.println("no sonar, strafe right");
       strafe(1);
     }
     
@@ -649,6 +645,8 @@ void driveToFire() {
 
 
 void loop(){
-  strafe(-1);
+  strafe(1);
+  
   //obstacleAvoid();
+  //delay(10000);
 }
