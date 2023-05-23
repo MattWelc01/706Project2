@@ -220,6 +220,9 @@ void measurePTs(){
   if((leftInner > fireThreshold)||(leftOuter > fireThreshold) || (rightInner > fireThreshold)|| (rightOuter > fireThreshold)){
     FIRE_FLAG = 1;
   }
+
+
+    FIRE_FLAG = 0;// FIRE FLAG IS DISABLED          ///////////////////////////////////
 }
 
 
@@ -352,15 +355,20 @@ void findMax(int turnPower, int maxSearches) {
   while (foundMax == 0) {
 
    
-    if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1)
-    {break;}
+   // if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1){break;}
 
     dist = measure_distance_ultrasonic();
-
+    //Serial.println("current dist:   ");
+    //Serial.print(dist);
     //find the largest distance
     if (dist > MaxDist) {
       MaxDist = dist;
+      //Serial.println("/////////////////////////////////////////////////////////New max dist:   ");
+      //Serial.print(MaxDist);
+      
       maxAngle = currentAngle;
+      // Serial.print(currentAngle);
+      //Serial.println(maxAngle);
     }
 
     //increment search variable until max searches done
@@ -374,10 +382,7 @@ void findMax(int turnPower, int maxSearches) {
   }
 
    //shutdown motors
-  left_front_motor.writeMicroseconds(1500);
-  left_rear_motor.writeMicroseconds(1500);
-  right_rear_motor.writeMicroseconds(1500);
-  right_front_motor.writeMicroseconds(1500);
+//disable_motors();
        
 
   //find angle turned
@@ -385,27 +390,27 @@ void findMax(int turnPower, int maxSearches) {
   if (currentAngle > maxAngle) {
     findWallAngle += 360;
   }
+        Serial.println(findWallAngle);
 
+currentAngle = 180;
+  while (abs((findWallAngle / 2) - (currentAngle - 180)) > 5) {
 
-    currentAngle = 180;
-    while(abs((findWallAngle/2) - (currentAngle - 180)) > 5 ){
-     
-      if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1)
-      {break;}
-       Serial.println(currentAngle);
-      vectorised_motor_inputs(0, 0 , (findWallAngle/2 - (currentAngle - 180)) * 0.8);
-    }
+    if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
+    //Serial.println(currentAngle);
+    vectorised_motor_inputs(0, 0, (findWallAngle / 2 - (currentAngle - 180)) * 0.8);
+  }
 
-    currentAngle = 180;
-    while(abs((findWallAngle/2) - (currentAngle - 180)) > 5 ){
-    
-      if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1)
-      {break;}
-       Serial.println(currentAngle);
-      vectorised_motor_inputs(0, 0 , (findWallAngle/2 - (currentAngle - 180)) * 0.8);
-    }
+  currentAngle = 180;
+  while (abs((findWallAngle / 2) - (currentAngle - 180)) > 5) {
 
-disable_motors();
+    if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
+    //Serial.println(currentAngle);
+    vectorised_motor_inputs(0, 0, (findWallAngle / 2 - (currentAngle - 180)) * 0.8);
+  }
+
+  disable_motors();
+  delay(5000);
+
 
 }
 
@@ -443,9 +448,6 @@ void straight() {
 } 
 
 
-
-
-
 void strafe(int direction) {
   //Left: -1, Right:1
   error_theta = -(currentAngle - 180);
@@ -455,6 +457,21 @@ void strafe(int direction) {
 }
 
 
+
+
+void turnAngle(int angle) {
+  currentAngle = 180;
+  float Kp = 0.8;
+  //2-(angle/100);
+  Serial.print("99999999999999999999999999999999999999999999999999999999999999999999999999999999");
+  while (abs((angle) - (currentAngle - 180)) > 10) {
+
+    //if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
+    Serial.println(currentAngle);
+    vectorised_motor_inputs(0, 0, (angle - (currentAngle - 180)) * 0.8);
+  }
+  disable_motors();
+}
 
 
 
@@ -645,8 +662,9 @@ void driveToFire() {
 
 
 void loop(){
-  strafe(1);
-  
+  //strafe(1);
+  findMax(120, 450);
+  //turnAngle(120);
   //obstacleAvoid();
   //delay(10000);
 }
