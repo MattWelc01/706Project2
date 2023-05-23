@@ -237,27 +237,28 @@ void measureIRs(){
   IRLS = analogRead(PinIRLS);
   IRRS = analogRead(PinIRRS);
   IRRF = analogRead(PinIRRF);
-  
-  if(IRLF < 220){
+
+
+  if(IRLF > 220){
     IRLF_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
-  if(IRLS < 600){
+  if(IRLS > 600){
     IRLS_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
 
-  if(IRRS < 600){
+  if(IRRS > 600){
     IRRS_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
 
-  if(IRRF < 220){
+  if(IRRF > 220){
     IRRF_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
 
-   if(SONAR < 10){
+   if(SONAR < 7){
     SONAR_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
@@ -495,16 +496,19 @@ void sweep() {
 
 ///////////////////OBSTACLE AVOIDANCE FUNCTIONS/////////////////////////////////////////////
 void obstacleAvoid(void){
+  
   if(SONAR_FLAG){
-    if(!IRLS && (IRLF + IRRF == 1)){
+    if(!IRLS_FLAG && ((IRLF_FLAG + IRRF_FLAG) == 1)){
       //strafe left
       strafe(-1);
-    }else if(!IRRS && (IRLF + IRRF == 1)){
+      Serial.println("yes sonar, strafe left");
+    }else if(!IRRS_FLAG && (IRLF_FLAG + IRRF_FLAG == 1)){
       //strafe right
       strafe(1);
-    }else if((IRLS && IRRS) && (IRLF || IRRF)){
+      Serial.println("yes sonar, strafe right");
+    }else if((IRLS_FLAG && IRRS_FLAG) && (IRLF_FLAG || IRRF_FLAG)){
       //escape
-    }else if(IRLF && IRRF){
+    }else if(IRLF_FLAG && IRRF_FLAG){
       //find max dist
     }else{
       //escape THIS IS NOT MOST EFFICIENT PATH
@@ -514,24 +518,26 @@ void obstacleAvoid(void){
   }
   
   if(!SONAR_FLAG){
-    if(!IRLS && (IRRF || IRLF)){
+    if(!IRLS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
       //STRAFE LEFT
+      Serial.println("no sonar, strafe left");
       strafe(-1);
     }
 
-    if(!IRRS && (IRRF || IRLF)){
+    if(!IRRS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
       //STRAFE RIGHT
+      Serial.println("no sonar, strafe right");
       strafe(1);
     }
     
-    if(IRLS && IRRS && (IRLF || IRRF)){
+    if(IRLS_FLAG && IRRS_FLAG && (IRLF_FLAG || IRRF_FLAG)){
       //ESCAPE
     }
 
-    if(IRLS && IRRS && !(IRLF || IRRF)){
+    if(IRLS_FLAG && IRRS_FLAG && !(IRLF_FLAG || IRRF_FLAG)){
       //SRAFE MIN DIST
     }
-    if(!IRLF && !IRRF){
+    if(!IRLF_FLAG && !IRRF_FLAG){
       //DRIVE FORWARD OPEN LOOP A BIT
     }
   }
@@ -643,5 +649,6 @@ void driveToFire() {
 
 
 void loop(){
-  
+  strafe(-1);
+  //obstacleAvoid();
 }
