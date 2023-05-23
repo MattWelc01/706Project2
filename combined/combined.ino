@@ -67,7 +67,7 @@ int distance = 0;   // variable for the distance measurement
 #define phototransistor_left_inner A13
 
 int FIRE_FLAG = 0;
-int fireThreshold = 4;
+int fireThreshold = 14;
 
 
 //IR RELATED GLOBALS
@@ -220,9 +220,6 @@ void measurePTs(){
   if((leftInner > fireThreshold)||(leftOuter > fireThreshold) || (rightInner > fireThreshold)|| (rightOuter > fireThreshold)){
     FIRE_FLAG = 1;
   }
-
-
-    FIRE_FLAG = 0;// FIRE FLAG IS DISABLED          ///////////////////////////////////
 }
 
 
@@ -243,7 +240,7 @@ void measureIRs(){
 
 
   if(IRLF > 220){
-    IRLF_FLAG = 1;
+    IRLF_FLAG = 8; //NOW NON BOOLEAN BE CAREFUL WHEN HANDLING
     OBSTACLE_FLAG = 1;
   }
   if(IRLS > 600){
@@ -252,12 +249,12 @@ void measureIRs(){
   }
 
   if(IRRS > 600){
-    IRRS_FLAG = 1;
+    IRRS_FLAG = 2;
     OBSTACLE_FLAG = 1;
   }
 
   if(IRRF > 220){
-    IRRF_FLAG = 1;
+    IRRF_FLAG = 4;
     OBSTACLE_FLAG = 1;
   }
 
@@ -466,7 +463,7 @@ void turnAngle(int angle) {
   Serial.print("99999999999999999999999999999999999999999999999999999999999999999999999999999999");
   while (abs((angle) - (currentAngle - 180)) > 10) {
 
-    //if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
+    if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
     Serial.println(currentAngle);
     vectorised_motor_inputs(0, 0, (angle - (currentAngle - 180)) * 0.8);
   }
@@ -513,46 +510,91 @@ void sweep() {
 
 ///////////////////OBSTACLE AVOIDANCE FUNCTIONS/////////////////////////////////////////////
 void obstacleAvoid(void){
+  int sum = IRLS_FLAG + IRRS_FLAG + IRRF_FLAG + IRLF_FLAG;
+Serial.println(sum);
   
   if(SONAR_FLAG){
-    if(!IRLS_FLAG && ((IRLF_FLAG + IRRF_FLAG) == 1)){
-      //strafe left
-      strafe(-1);
-    }else if(!IRRS_FLAG && (IRLF_FLAG + IRRF_FLAG == 1)){
-      //strafe right
-      strafe(1);
-    }else if((IRLS_FLAG && IRRS_FLAG) && (IRLF_FLAG || IRRF_FLAG)){
-      //escape
-    }else if(IRLF_FLAG && IRRF_FLAG){
-      //find max dist
-    }else{
-      //escape THIS IS NOT MOST EFFICIENT PATH
-    }
+      if( (sum == 2 ||(sum == 4) || (sum == 10) || (sum == 6) )){
+          //strafe left
+           Serial.println("strafe left sonar"); 
+          strafe(-1);    
+      }else if((sum == 1) ||  (sum == 5) || (sum == 8) || (sum == 9) ){
+          //strafe right
+          Serial.println("strafe right sonar");
+          strafe(1);     
+      }else if((sum == 3) ||  (sum == 7) || (sum == 11) ){
+          //escape 
+           Serial.println("escape sonar");
+      }else if(sum == 0){
+        //strafe min dist
+        Serial.println("strafe min dist sonar");
+      }else if((sum == 12) || (sum == 13) || (sum == 14) || (sum == 15)){
+        //go to max dist
+        Serial.println("find max dist sonar");
+      }
+
+      //NEED LOGIN FOR CONTINUE
+    
+//    if(!IRLS_FLAG && ((IRLF_FLAG + IRRF_FLAG) == 1)){
+//      //strafe left
+//      strafe(-1);
+//      Serial.println("strafe left sonar");
+//    }else if(!IRRS_FLAG && ((IRLF_FLAG + IRRF_FLAG) == 1)){
+//      //strafe right
+//      strafe(1);
+//      Serial.println("strafe right sonar");
+//    }else if((IRLS_FLAG && IRRS_FLAG) && (IRLF_FLAG || IRRF_FLAG)){
+//      //escape
+//            Serial.println("escape sonar");
+//    }else if(IRLF_FLAG && IRRF_FLAG){
+//      //find max dist
+//            Serial.println("find max dist sonar 1");
+//    }else{
+//      //escape THIS IS NOT MOST EFFICIENT PATH
+//          Serial.println("find max dist sonar 2");
+//    }
 
     
   }
   
   if(!SONAR_FLAG){
-    if(!IRLS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
-      //STRAFE LEFT
-      strafe(-1);
-    }
+      if((sum == 4) ||  (sum == 6) || (sum == 10) || (sum == 14) ){
+          //strafe left
+          Serial.println("strafe left no sonar");
+          strafe(-1);     
+      }else if((sum == 5) ||  (sum == 8) || (sum == 9) || (sum == 13) ){
+          //strafe right
+          Serial.println("strafe right no sonar");
+          strafe(1);     
+      }else if((sum == 7) ||  (sum == 11) || (sum == 15) ){
+          //escape 
+           Serial.println("escpae no sonar");
+      }else if(sum == 12){
+        //strafe min dist
+        Serial.println("min dist no sonar");
+      }
+//NEED LOGIN FOR CONTINUE
 
-    if(!IRRS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
-      //STRAFE RIGHT
-      strafe(1);
-    }
+
     
-    if(IRLS_FLAG && IRRS_FLAG && (IRLF_FLAG || IRRF_FLAG)){
-      //ESCAPE
-    }
-
-    if(IRLS_FLAG && IRRS_FLAG && !(IRLF_FLAG || IRRF_FLAG)){
-      //SRAFE MIN DIST
-    }
-    if(!IRLF_FLAG && !IRRF_FLAG){
-      //DRIVE FORWARD OPEN LOOP A BIT
-    }
+//    if(!IRLS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
+//      //STRAFE LEFT
+//      strafe(-1);
+//      Serial.println("strafe left no sonar");
+//    }else if(!IRRS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
+//      //STRAFE RIGHT
+//      strafe(1);
+//      Serial.println("strafe right no sonar");
+//    }else if(IRLS_FLAG && IRRS_FLAG && (IRLF_FLAG || IRRF_FLAG)){
+//      //ESCAPE
+//      Serial.println("escpae no sonar");
+//    }else if(IRLS_FLAG && IRRS_FLAG && !(IRLF_FLAG || IRRF_FLAG)){
+//      //SRAFE MIN DIST
+//      Serial.println("min dist no sonar");
+//    }else if(!IRLF_FLAG && !IRRF_FLAG){
+//      //DRIVE FORWARD OPEN LOOP A BIT
+//      Serial.println("forward no sonar");
+//    }
   }
 }
 
@@ -662,9 +704,9 @@ void driveToFire() {
 
 
 void loop(){
-  //strafe(1);
-  findMax(120, 450);
+  //strafe(-1);
+  //findMax(120, 450);
   //turnAngle(120);
-  //obstacleAvoid();
+  obstacleAvoid();
   //delay(10000);
 }
