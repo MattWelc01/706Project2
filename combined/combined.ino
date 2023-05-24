@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <math.h>
 
+
 //gyro globals
 int sensorPin = A3;               //define the pin that gyro is connected
 int sensorValue = 0;              // read out value of sensor
@@ -15,11 +16,13 @@ float gyroRate = 0;               // read out value of sensor in voltage
 volatile float currentAngle = 180;  // current angle calculated by angular velocity integral on
 byte serialReadGyro = 0;          // for serial print control
 
+
 Servo left_front_motor;   // create servo object to control Vex Motor Controller 29
 Servo left_rear_motor;    // create servo object to control Vex Motor Controller 29
 Servo right_rear_motor;   // create servo object to control Vex Motor Controller 29
 Servo right_front_motor;  // create servo object to control Vex Motor Controller 29
 Servo Pivot;              // create servo object to control pivot servo
+
 
 //motor pins
 const byte left_front = 46;
@@ -27,6 +30,17 @@ const byte left_rear = 47;
 const byte right_rear = 50;
 const byte right_front = 51;
 const byte PivotPin = 21;
+
+
+//servo globals
+volatile float targetPos = 90;   // target position for the servo
+volatile float currentPos = 90;   // current position of the servo
+bool left, right, middle = false;
+bool sweepFlag = 0;
+
+
+
+
 
 
 //wireless communication variables
@@ -41,8 +55,11 @@ const byte PivotPin = 21;
 #define OUTPUTBLUETOOTHMONITOR 1  // Bluetooth Serial Port
 SoftwareSerial BluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 
+
 byte serialRead = 0;  //for control serial communication
 int signalADC = 0;    // the read out signal in 0-1023 corresponding to 0-5v
+
+
 
 
 //ultrasonic global variables
@@ -54,33 +71,45 @@ int distance = 0;   // variable for the distance measurement
 
 
 
+
+
+
 //length variables for kinematics
 #define L1 7.6
 #define L2 8.875
 
 
 
+
+
+
 //Phototransistor related globals
 #define phototransistor_right_inner A10
 #define phototransistor_right_outer A11
-#define phototransistor_left_outer A12 
+#define phototransistor_left_outer A12
 #define phototransistor_left_inner A13
+
 
 int FIRE_FLAG = 0;
 int fireThreshold = 14;
 
 
+
+
 //IR RELATED GLOBALS
   #define PinIRLF A6
   #define PinIRLS A7
-  #define PinIRRS A8 
+  #define PinIRRS A8
   #define PinIRRF A9
+
 
   int IRLF_FLAG = 0;
   int IRLS_FLAG = 0;
   int IRRS_FLAG = 0;
   int IRRF_FLAG = 0;
   int SONAR_FLAG = 0;
+  int sum = 0;
+
 
   int IRLF = 0;
   int IRLS = 0;
@@ -89,6 +118,7 @@ int fireThreshold = 14;
   int SONAR = 0;
   int OBSTACLE_FLAG = 0;
 
+
 //Movement related variables
 volatile float error_theta = 0;
 float kp_theta = 5; //  float kp_theta = 1.75, ki_theta = 0.15, kd_theta = 0.40;
@@ -96,28 +126,38 @@ float kp_theta = 5; //  float kp_theta = 1.75, ki_theta = 0.15, kd_theta = 0.40;
 #define RIGHT 1
 
 
+
+
 void setup(){
 
+
   BluetoothSerial.begin(9600);
+
 
   pinMode(trigPin, OUTPUT);  // Sets the trigPin as an OUTPUT
   pinMode(echoPin, INPUT);   // Sets the echoPin as an INPUT
 
+
   pinMode(sensorPin, INPUT);  // Sets the gyroscope pin as INPUT
   Pivot.attach(PivotPin, 450, 2560);
 
-  
+
+ 
   pinMode(INTERNAL_LED, OUTPUT);
   pinMode(fanPin, OUTPUT);
 
+
   Pivot.attach(PivotPin, 560, 2610);
+
 
   cli();
 
-  
+
+ 
   Serial.begin(9600);
   Serial.println("Calibrating, keep gyroscope still.");
   Serial.println("Getting gyro zero voltage");
+
 
   float sum = 0;                 // variables for gyroscope calibration
   for (int j = 0; j < 100; j++)  // read 100 values of voltage when gyro is at still, to calculate the zero-drift
@@ -130,7 +170,10 @@ void setup(){
 
 
 
-  
+
+
+
+ 
   TCNT2 = 0;                // zero timer
   OCR2A = 249;              // Set CTC compare value with a prescaler of 64 = 100ms
   TCCR2A |= (1 << WGM21);   // Configure timer 2 for CTC mode
@@ -139,20 +182,27 @@ void setup(){
   sei();  // Enable global interrupts
 
 
+
+
   pinMode(phototransistor_right_inner, INPUT);
   pinMode(phototransistor_left_inner, INPUT);
   pinMode(phototransistor_right_outer, INPUT);
   pinMode(phototransistor_left_outer, INPUT);
 
 
+
+
   enable_motors();
   delay(1000);
 }
 
+
 //////////////////////SERIAL RELATED CODE/////////////////////////////////////////////////////////////////////////////////////////
+
 
 void serialOutputMonitor(int32_t Value1, int32_t Value2, int32_t Value3) {
   String Delimiter = ", ";
+
 
   Serial.print(Value1, DEC);
   Serial.print(Delimiter);
@@ -161,24 +211,31 @@ void serialOutputMonitor(int32_t Value1, int32_t Value2, int32_t Value3) {
   Serial.println(Value3, DEC);
 }
 
+
 void serialOutput(int32_t Value1, int32_t Value2, int32_t Value3) {  //only for plotting - to turn on change OUTPUTMONITOR = 1
   if (OUTPUTMONITOR) {
     serialOutputMonitor(Value1, Value2, Value3);
   }
+
 
   if (OUTPUTBLUETOOTHMONITOR) {
     bluetoothSerialOutputMonitor(Value1, Value2);
   }
 }
 
+
 void bluetoothSerialOutputMonitor(double Value1, double Value2) {
   String Delimiter = ", ";
+
 
   BluetoothSerial.print(Value1, DEC);
   BluetoothSerial.print(Delimiter);
   BluetoothSerial.print(Value2, DEC);
   BluetoothSerial.println(Delimiter);
 }
+
+
+
 
 
 
@@ -197,25 +254,36 @@ ISR(TIMER2_COMPA_vect) {
     measure_gyro_angle();
   }
   if(count%25 == 0){
+    if(sweepFlag == 1){
     sweep();
+    }
+    else{
+  //  lockOnFire();
+    }
   }
 }
 
 
 
 
-
-
-
+//HAVE BEEN CHANGED TO GLOBALS
+int leftInner =0;
+int leftOuter =0;
+int rightInner =0;
+int rightOuter =0;
 
 
 void measurePTs(){
   FIRE_FLAG = 0;
-  
-  int leftInner = analogRead(phototransistor_left_inner);
-  int leftOuter = analogRead(phototransistor_left_outer);
-  int rightInner = analogRead(phototransistor_right_inner);
-  int rightOuter = analogRead(phototransistor_right_outer);
+ 
+  leftInner = analogRead(phototransistor_left_inner);
+  leftOuter = analogRead(phototransistor_left_outer);
+  rightInner = analogRead(phototransistor_right_inner);
+  rightOuter = analogRead(phototransistor_right_outer);
+
+
+  //Serial.println(rightOuter);
+
 
   if((leftInner > fireThreshold)||(leftOuter > fireThreshold) || (rightInner > fireThreshold)|| (rightOuter > fireThreshold)){
     FIRE_FLAG = 1;
@@ -223,7 +291,9 @@ void measurePTs(){
 }
 
 
-  
+
+
+ 
 void measureIRs(){
   IRLF_FLAG = 0;
   IRLS_FLAG = 0;
@@ -232,11 +302,14 @@ void measureIRs(){
   SONAR_FLAG = 0;
   OBSTACLE_FLAG = 0;
 
+
   SONAR = measure_distance_ultrasonic;
   IRLF = analogRead(PinIRLF);
   IRLS = analogRead(PinIRLS);
   IRRS = analogRead(PinIRRS);
   IRRF = analogRead(PinIRRF);
+
+
 
 
   if(IRLF > 220){
@@ -248,34 +321,46 @@ void measureIRs(){
     OBSTACLE_FLAG = 1;
   }
 
+
   if(IRRS > 600){
     IRRS_FLAG = 2;
     OBSTACLE_FLAG = 1;
   }
+
 
   if(IRRF > 220){
     IRRF_FLAG = 4;
     OBSTACLE_FLAG = 1;
   }
 
+
    if(SONAR < 7){
     SONAR_FLAG = 1;
     OBSTACLE_FLAG = 1;
   }
+
+
+  sum = IRLS_FLAG + IRRS_FLAG + IRRF_FLAG + IRLF_FLAG;
 }
+
+
+
 
 
 
 void measure_gyro_angle() {  //Function calculates gyroscope direction in degrees
 
+
   gyroRate = (analogRead(sensorPin) * gyroSupplyVoltage) / 1023;  // convert the 0-1023 signal to 0-5v
   gyroRate -= (gyroZeroVoltage / 1023 * 5);                       // find the voltage offset the value of voltage when gyro is zero (still)
   float angularVelocity = gyroRate / gyroSensitivity;             // read out voltage divided the gyro sensitivity to calculate the angular velocity
+
 
   if (angularVelocity >= rotationThreshold || angularVelocity <= -rotationThreshold) {  // if the angular velocity is less than the threshold, ignore it
     float angleChange = angularVelocity / (1000.00 / (T));                              // we are running a loop in T. one second will run (1000/T).
     currentAngle += angleChange;
   }
+
 
   if (currentAngle < 0) {  // keep the angle between 0-360
     currentAngle += 360;
@@ -283,8 +368,11 @@ void measure_gyro_angle() {  //Function calculates gyroscope direction in degree
     currentAngle -= 360;
   }
 
+
   //Serial.println(currentAngle);
 }
+
+
 
 
 //////////////////////SONAR RELATED CODE/////////////////////////////////////////////////
@@ -298,6 +386,8 @@ int measure_distance_ultrasonic(void) {
   distance = duration * 0.034 / 2;    // Calculating the distance and dividing by 2 (distance to and from)
 
 
+
+
   return distance;
 }
 
@@ -305,7 +395,13 @@ int measure_distance_ultrasonic(void) {
 
 
 
+
+
+
+
+
 ///////////////////MOVEMENT RELATED CODE////////////////////////////////////////////////////
+
 
 void enable_motors() {
   left_front_motor.attach(left_front);    // attaches the servo on pin left_front to turn Vex Motor Controller 29 On
@@ -313,6 +409,7 @@ void enable_motors() {
   right_rear_motor.attach(right_rear);    // attaches the servo on pin right_rear to turn Vex Motor Controller 29 On
   right_front_motor.attach(right_front);  // attaches the servo on pin right_front to turn Vex Motor Controller 29 On
 }
+
 
 void disable_motors() {
   left_front_motor.attach(1500);   // attaches the servo on pin left_front to turn Vex Motor Controller 29 On
@@ -323,9 +420,15 @@ void disable_motors() {
 
 
 
+
+
+
 double saturate(double u, double min_val, double max_val) {
   return fmin(fmax(u, min_val), max_val);
 }
+
+
+
 
 
 
@@ -336,10 +439,13 @@ void findMax(int turnPower, int maxSearches) {
   int maxAngle = 0;
   float findWallAngle = 0;
 
+
   int dist = 0;
+
 
   //get the initial distance
   enable_motors();//VECTORISED MOTOR CONTROL IS DISABLING MOTORS
+
 
   //search for corner to the left
   //Serial.println("Turning left 1");
@@ -348,11 +454,14 @@ void findMax(int turnPower, int maxSearches) {
   right_rear_motor.writeMicroseconds(saturate((1500 - turnPower), 750, 2250));
   right_front_motor.writeMicroseconds(saturate((1500 - turnPower), 750, 2250));
 
+
   //continue to turn while not found max distance
   while (foundMax == 0) {
 
+
    
    // if(OBSTACLE_FLAG == 1 || FIRE_FLAG == 1){break;}
+
 
     dist = measure_distance_ultrasonic();
     //Serial.println("current dist:   ");
@@ -362,11 +471,12 @@ void findMax(int turnPower, int maxSearches) {
       MaxDist = dist;
       //Serial.println("/////////////////////////////////////////////////////////New max dist:   ");
       //Serial.print(MaxDist);
-      
+     
       maxAngle = currentAngle;
       // Serial.print(currentAngle);
       //Serial.println(maxAngle);
     }
+
 
     //increment search variable until max searches done
     if (numSearches < maxSearches) {
@@ -375,12 +485,15 @@ void findMax(int turnPower, int maxSearches) {
       foundMax = 1;
     }
 
+
     delay(10);  //search at 100 hz
   }
+
 
    //shutdown motors
 //disable_motors();
        
+
 
   //find angle turned
   findWallAngle = maxAngle - currentAngle;
@@ -389,33 +502,40 @@ void findMax(int turnPower, int maxSearches) {
   }
         Serial.println(findWallAngle);
 
-currentAngle = 180;
-  while (abs((findWallAngle / 2) - (currentAngle - 180)) > 5) {
-
-    if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
-    //Serial.println(currentAngle);
-    vectorised_motor_inputs(0, 0, (findWallAngle / 2 - (currentAngle - 180)) * 0.8);
-  }
 
   currentAngle = 180;
   while (abs((findWallAngle / 2) - (currentAngle - 180)) > 5) {
 
+
     if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
     //Serial.println(currentAngle);
     vectorised_motor_inputs(0, 0, (findWallAngle / 2 - (currentAngle - 180)) * 0.8);
   }
 
+
+  currentAngle = 180;
+  while (abs((findWallAngle / 2) - (currentAngle - 180)) > 5) {
+
+
+    if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
+    //Serial.println(currentAngle);
+    vectorised_motor_inputs(0, 0, (findWallAngle / 2 - (currentAngle - 180)) * 0.8);
+  }
+
+
   disable_motors();
-  delay(5000);
-
-
 }
 
 
 
+
+
+
 void vectorised_motor_inputs(double x, double y, double theta) {
+ 
   double motor_speed[4] = { 0, 0, 0, 0 };
   double max_abs_value = fmax(fabs(x), fmax(fabs(y), fabs(theta)));
+
 
   if (max_abs_value >= 650.0) {
     double scale_factor = 650.0 / max_abs_value;
@@ -424,10 +544,12 @@ void vectorised_motor_inputs(double x, double y, double theta) {
     theta = theta * scale_factor;
   }
 
+
   motor_speed[0] = (x + y + theta * (L1 + L2));  //FL
   motor_speed[1] = (x - y - theta * (L1 + L2));  //FR
   motor_speed[2] = (x - y + theta * (L1 + L2));  //BL
   motor_speed[3] = (x + y - theta * (L1 + L2));  //BR
+
 
   left_front_motor.writeMicroseconds(saturate(1500 + motor_speed[0], 850, 2150));
   right_front_motor.writeMicroseconds(saturate(1500 - motor_speed[1], 850, 2150));
@@ -436,22 +558,40 @@ void vectorised_motor_inputs(double x, double y, double theta) {
 }
 
 
-void straight() {
-  //open loop drive forward with closed loop angle 
-  error_theta = currentAngle - 180;
-
-  //Motor kinematics control
-  vectorised_motor_inputs(175, 0, kp_theta * error_theta);
-} 
 
 
-void strafe(int direction) {
-  //Left: -1, Right:1
-  error_theta = -(currentAngle - 180);
+void straight(int prevSum) {
+  //open loop drive forward with closed loop angle
 
-  //Motor kinematics control
-  vectorised_motor_inputs(0, direction * 175, kp_theta * error_theta);
+
+  enable_motors();
+  while(sum == prevSum || FIRE_FLAG == 0){
+    //Motor kinematics control
+    vectorised_motor_inputs(175, 0, 0);
+  }
+
+
+  disable_motors();
 }
+
+
+
+
+void strafe(int direction, int prevSum) {
+  //Left: -1, Right:1
+  enable_motors();
+  while(sum == prevSum || FIRE_FLAG == 0){
+    //Motor kinematics control
+    vectorised_motor_inputs(0, direction * 175, 0);
+  }
+  disable_motors();
+
+
+}
+
+
+
+
 
 
 
@@ -462,6 +602,7 @@ void turnAngle(int angle) {
   //2-(angle/100);
   Serial.print("99999999999999999999999999999999999999999999999999999999999999999999999999999999");
   while (abs((angle) - (currentAngle - 180)) > 10) {
+
 
     if (OBSTACLE_FLAG == 1 || FIRE_FLAG == 1) { break; }
     Serial.println(currentAngle);
@@ -474,12 +615,21 @@ void turnAngle(int angle) {
 
 
 
+
+
+
+
+
 //////////////////////SERVO RELATED CODE//////////////////////////////////////////////////
-volatile float targetPos = 90;   // target position for the servo
-volatile float currentPos = 90;   // current position of the servo
-bool left, right, middle = false;
+
 
 void sweep() {
+
+
+if(sweepFlag == 1)
+{
+
+
   if (middle) {
     targetPos = 45;
   } else if (right) {
@@ -487,6 +637,7 @@ void sweep() {
   } else if (left) {
     targetPos = 90;
   }
+
 
   if (currentPos != targetPos) {
     if (targetPos > currentPos) {
@@ -496,6 +647,7 @@ void sweep() {
     }
     Pivot.write(currentPos);  // move servo to new position
 
+
   }
   else {
     left = (currentPos == 135);
@@ -504,26 +656,53 @@ void sweep() {
   }
   //Serial.println(currentPos);
 }
+}
+
+
+void lockOnFire() {
+
+
+
+
+
+
+//if right sensor is reading higher than left
+if(rightOuter > (leftOuter)){
+currentPos--;
+currentPos = max(currentPos, 45);
+}
+else if(leftOuter > (rightOuter)){
+//else if Left sensor is reading higher than Right
+currentPos++;
+currentPos = min(currentPos, 135);
+}
+
+
+Pivot.write(currentPos);  // move servo to new position
+
+
+}
 
 
 
 
 ///////////////////OBSTACLE AVOIDANCE FUNCTIONS/////////////////////////////////////////////
 void obstacleAvoid(void){
-  int sum = IRLS_FLAG + IRRS_FLAG + IRRF_FLAG + IRLF_FLAG;
+
+
 Serial.println(sum);
-  
+ 
   if(SONAR_FLAG){
       if( (sum == 2 ||(sum == 4) || (sum == 10) || (sum == 6) )){
           //strafe left
-           Serial.println("strafe left sonar"); 
-          strafe(-1);    
+           Serial.println("strafe left sonar");
+          strafe(-1, sum);    
       }else if((sum == 1) ||  (sum == 5) || (sum == 8) || (sum == 9) ){
           //strafe right
           Serial.println("strafe right sonar");
-          strafe(1);     
+          strafe(1, sum);    
       }else if((sum == 3) ||  (sum == 7) || (sum == 11) ){
-          //escape 
+          //escape
            Serial.println("escape sonar");
       }else if(sum == 0){
         //strafe min dist
@@ -531,10 +710,13 @@ Serial.println(sum);
       }else if((sum == 12) || (sum == 13) || (sum == 14) || (sum == 15)){
         //go to max dist
         Serial.println("find max dist sonar");
+      }else{
+        straight(sum);
       }
 
+
       //NEED LOGIN FOR CONTINUE
-    
+   
 //    if(!IRLS_FLAG && ((IRLF_FLAG + IRRF_FLAG) == 1)){
 //      //strafe left
 //      strafe(-1);
@@ -554,29 +736,34 @@ Serial.println(sum);
 //          Serial.println("find max dist sonar 2");
 //    }
 
-    
+
+   
   }
-  
+ 
   if(!SONAR_FLAG){
       if((sum == 4) ||  (sum == 6) || (sum == 10) || (sum == 14) ){
           //strafe left
           Serial.println("strafe left no sonar");
-          strafe(-1);     
+          strafe(-1, sum);    
       }else if((sum == 5) ||  (sum == 8) || (sum == 9) || (sum == 13) ){
           //strafe right
           Serial.println("strafe right no sonar");
-          strafe(1);     
+          strafe(1, sum);    
       }else if((sum == 7) ||  (sum == 11) || (sum == 15) ){
-          //escape 
+          //escape
            Serial.println("escpae no sonar");
       }else if(sum == 12){
         //strafe min dist
         Serial.println("min dist no sonar");
+      }else{
+        straight(sum);
       }
 //NEED LOGIN FOR CONTINUE
 
 
-    
+
+
+   
 //    if(!IRLS_FLAG && (IRRF_FLAG || IRLF_FLAG)){
 //      //STRAFE LEFT
 //      strafe(-1);
@@ -600,12 +787,16 @@ Serial.println(sum);
 
 
 
+
+
+
 ///////////////////////PT RELATED CODE BELOW THIS LINE/////////////////////////////////////////////////////////////////////////////////////////
 int fanOn() {
   digitalWrite(fanPin, HIGH);
   delay(5000);
   digitalWrite(fanPin, LOW);
 }
+
 
 int motorPower = 200;
 int startMotors() {
@@ -614,6 +805,7 @@ int startMotors() {
   left_rear_motor.writeMicroseconds(saturate(1500 + motorPower, 850, 2150));
   right_rear_motor.writeMicroseconds(saturate(1500 - motorPower, 850, 2150));
 }
+
 
 int stopMotors() {
   left_front_motor.writeMicroseconds(1500);
@@ -624,17 +816,21 @@ int stopMotors() {
 
 
 
+
+
+
 int PTpinIR = A10;
 int PTpinOR = A11;
 int PTpinOL = A12;
 int PTpinIL = A13;
-int sweepFlag = 1;
+
 
 int narrowServoSearch() {
   int numSearches = 100;
   int maxBrightness = 0;
   int lastServoFireAngle = 90; //default fire direction
-  
+ 
+
 
   Pivot.write(120);
   //servo(60);
@@ -642,8 +838,11 @@ int narrowServoSearch() {
   int x = 0;
   for (x = 1; x < numSearches; x++) {
 
+
     //servo(60 + x); //SWEEP SERVO CODE GOES HERE
     //sweep();
+
+
 
 
     if ((analogRead(PTpinIR) + analogRead(PTpinOR)) > maxBrightness) {
@@ -653,53 +852,37 @@ int narrowServoSearch() {
   }
   sweepFlag = 0;
 
+
   Pivot.write(lastServoFireAngle);
   //servo(lastServoFireAngle);
+
 
   return lastServoFireAngle; //may not need
 }
 
+
 int lastServoFireAngle = 0;
-
 void driveToFire() {
-  int fireDistance = 10;
-  int fireFound = 0;
-  
-  //turn(currentAngle -180 + currentPos - 90);
-  //servo(90);
-  Pivot.write(90);
 
-  narrowServoSearch();
 
-  //turn(currentAngle -180 + currentPos - 90);
-  //servo(90);
-  Pivot.write(90);
+    sweepFlag = 0;
 
-  startMotors();
 
-  while (fireFound == 0) {
-    narrowServoSearch();
+      while(OBSTACLE_FLAG == 0 && FIRE_FLAG == 0){
 
-    if (OBSTACLE_FLAG) {
-      break;
-    }
 
-    if ((lastServoFireAngle - 90) > 10) {
-      //openLoopAdjustCourse(currentAngle -180 + currentPos - 90);
-    }
+         //vectorised_motor_inputs(speed  based on fire intensity?, 0, -Kp * angle of radar);
 
-    if ((lastServoFireAngle - 90) > 25) {
-      stopMotors();
-      //driveToFire();
-    }
 
-    if (fireDistance < 10) {
-      fireFound = 1;
-      narrowServoSearch(); //SHOULD THIS BE MOED TO FireFight() Function (state D)
-      fanOn();
-    }
-  }
+      }
+
+
+    sweepFlag = 1;
+    //another while for finding the fire again if it gets lost////////////////////
 }
+
+
+
 
 
 
